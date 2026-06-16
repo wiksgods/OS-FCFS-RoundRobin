@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ứng dụng web trực quan hóa thuật toán điều phối CPU First-Come First-Served (FCFS) và Round Robin (RR) với biểu đồ Gantt tương tác sinh động.">
+  <title>Mô Phỏng Điều Phối CPU - FCFS & Round Robin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 id="main-title">Mô Phỏng Điều Phối CPU</h1>
+      <p>Trực quan hóa và so sánh thuật toán FCFS & Round Robin Scheduling</p>
+    </header>
+
+    <div class="dashboard-grid">
+      <!-- Cấu hình và danh sách tiến trình -->
+      <aside class="card" id="config-panel">
+        <h2 class="card-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line></svg>
+          Cấu hình tiến trình
+        </h2>
+        
+        <div class="form-group">
+          <label for="quantum-input">Thời gian lượng tử q (Round Robin)</label>
+          <input type="number" id="quantum-input" min="1" value="2" placeholder="Ví dụ: 2">
+        </div>
+
+        <h3 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--text-primary)">
+          Danh sách tiến trình chạy
+        </h3>
+        
+        <div class="table-wrapper">
+          <table id="process-input-table">
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>AT (Thời điểm đến)</th>
+                <th>BT (Thời gian chạy)</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="process-list-tbody">
+              <!-- Rendered dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Inline Form to Add Process -->
+        <div class="process-form-inline">
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="add-arrival-time" style="font-size: 0.75rem">Arrival (AT)</label>
+            <input type="number" id="add-arrival-time" min="0" value="0">
+          </div>
+          <div class="form-group" style="margin-bottom: 0">
+            <label for="add-burst-time" style="font-size: 0.75rem">Burst (BT)</label>
+            <input type="number" id="add-burst-time" min="1" value="5">
+          </div>
+          <button type="button" class="btn btn-secondary" id="btn-add-process" style="padding: 0.75rem 1rem">
+            Thêm
+          </button>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <button type="button" class="btn btn-primary" id="btn-run-simulation">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Chạy Mô Phỏng
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-reset-demo">
+            Khôi phục bộ mẫu (P1-P3)
+          </button>
+        </div>
+      </aside>
+
+      <!-- Panel mô phỏng trực quan hóa -->
+      <main class="visualizer-panel" id="visualizer-main">
+        <div class="algo-tabs" role="tablist">
+          <button class="tab-btn active" id="tab-fcfs" role="tab" aria-selected="true" aria-controls="fcfs-content">FCFS</button>
+          <button class="tab-btn" id="tab-rr" role="tab" aria-selected="false" aria-controls="rr-content">Round Robin</button>
+          <button class="tab-btn" id="tab-compare" role="tab" aria-selected="false" aria-controls="compare-content">So Sánh</button>
+        </div>
+
+        <!-- FCFS Tab Content -->
+        <section class="tab-content active card" id="fcfs-content" role="tabpanel">
+          <h2 class="card-title">Kết quả điều phối FCFS (First-Come First-Served)</h2>
+          
+          <!-- Metrics Grid -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Thời gian chờ trung bình (AWT)</span>
+              <span class="metric-val highlight-wt" id="fcfs-awt">0.00</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Thời gian hoàn thành trung bình (ATAT)</span>
+              <span class="metric-val highlight-tat" id="fcfs-atat">0.00</span>
+            </div>
+          </div>
+
+          <!-- Gantt Chart -->
+          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; font-family: var(--font-title);">Biểu đồ Gantt (FCFS)</h3>
+          <div class="gantt-container">
+            <div class="gantt-chart" id="fcfs-gantt-chart">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="gantt-timeline" id="fcfs-gantt-timeline">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Simulation Component -->
+          <div class="sim-section" id="fcfs-sim-section">
+            <div class="sim-header">
+              <span class="sim-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Mô phỏng từng bước (FCFS)
+              </span>
+              <span class="sim-time-badge">Thời gian t = <span id="fcfs-sim-time">0</span></span>
+            </div>
+
+            <!-- Controller Buttons -->
+            <div class="sim-controls">
+              <div class="sim-btn-group">
+                <button type="button" class="sim-btn" id="btn-fcfs-sim-reset" title="Bắt đầu lại (Reset)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-fcfs-sim-prev" title="Lùi 1 giây">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-fcfs-sim-play" title="Tự động phát (Play/Pause)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-fcfs-sim-next" title="Tiến 1 giây">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+              </div>
+              
+              <select class="sim-speed-select" id="fcfs-sim-speed">
+                <option value="2000">Tốc độ: Chậm (2.0s)</option>
+                <option value="1000" selected>Tốc độ: Thường (1.0s)</option>
+                <option value="500">Tốc độ: Nhanh (0.5s)</option>
+              </select>
+            </div>
+
+            <!-- Ready Queue & CPU Status -->
+            <div class="sim-status-grid">
+              <div class="queue-visualizer-card">
+                <span class="queue-label">Hàng đợi Ready (Ready Queue)</span>
+                <div class="queue-list" id="fcfs-sim-queue">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+              <div class="cpu-visualizer-card" id="fcfs-sim-cpu-card">
+                <span class="queue-label">Trạng thái CPU</span>
+                <div class="cpu-container">
+                  <div class="cpu-box" id="fcfs-sim-cpu">Rảnh (IDLE)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Log Monospace Terminal -->
+            <div class="step-log-card">
+              <span class="queue-label">Nhật ký hoạt động hệ thống (System Log)</span>
+              <div class="step-log-box" id="fcfs-sim-log">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Table -->
+          <h3 style="font-size: 1.05rem; margin-top: 2rem; margin-bottom: 0.75rem; font-family: var(--font-title);">Bảng thông số chi tiết</h3>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Arrival Time (AT)</th>
+                  <th>Burst Time (BT)</th>
+                  <th>Completion Time (CT)</th>
+                  <th>Turnaround Time (TAT)</th>
+                  <th>Waiting Time (WT)</th>
+                </tr>
+              </thead>
+              <tbody id="fcfs-results-tbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Round Robin Tab Content -->
+        <section class="tab-content card" id="rr-content" role="tabpanel">
+          <h2 class="card-title" id="rr-title-text">Kết quả điều phối Round Robin</h2>
+          
+          <!-- Metrics Grid -->
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <span class="metric-label">Thời gian chờ trung bình (AWT)</span>
+              <span class="metric-val highlight-wt" id="rr-awt">0.00</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Thời gian hoàn thành trung bình (ATAT)</span>
+              <span class="metric-val highlight-tat" id="rr-atat">0.00</span>
+            </div>
+          </div>
+
+          <!-- Gantt Chart -->
+          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; font-family: var(--font-title);">Biểu đồ Gantt (Round Robin)</h3>
+          <div class="gantt-container">
+            <div class="gantt-chart" id="rr-gantt-chart">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="gantt-timeline" id="rr-gantt-timeline">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Simulation Component -->
+          <div class="sim-section" id="rr-sim-section">
+            <div class="sim-header">
+              <span class="sim-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                Mô phỏng từng bước (Round Robin)
+              </span>
+              <span class="sim-time-badge">Thời gian t = <span id="rr-sim-time">0</span></span>
+            </div>
+
+            <!-- Controller Buttons -->
+            <div class="sim-controls">
+              <div class="sim-btn-group">
+                <button type="button" class="sim-btn" id="btn-rr-sim-reset" title="Bắt đầu lại (Reset)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-rr-sim-prev" title="Lùi 1 giây">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-rr-sim-play" title="Tự động phát (Play/Pause)">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                </button>
+                <button type="button" class="sim-btn" id="btn-rr-sim-next" title="Tiến 1 giây">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+                </button>
+              </div>
+              
+              <select class="sim-speed-select" id="rr-sim-speed">
+                <option value="2000">Tốc độ: Chậm (2.0s)</option>
+                <option value="1000" selected>Tốc độ: Thường (1.0s)</option>
+                <option value="500">Tốc độ: Nhanh (0.5s)</option>
+              </select>
+            </div>
+
+            <!-- Ready Queue & CPU Status -->
+            <div class="sim-status-grid">
+              <div class="queue-visualizer-card">
+                <span class="queue-label">Hàng đợi Ready (Ready Queue)</span>
+                <div class="queue-list" id="rr-sim-queue">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+              <div class="cpu-visualizer-card" id="rr-sim-cpu-card">
+                <span class="queue-label">Trạng thái CPU</span>
+                <div class="cpu-container">
+                  <div class="cpu-box" id="rr-sim-cpu">Rảnh (IDLE)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step Log Monospace Terminal -->
+            <div class="step-log-card">
+              <span class="queue-label">Nhật ký hoạt động hệ thống (System Log)</span>
+              <div class="step-log-box" id="rr-sim-log">
+                <!-- Rendered via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Table -->
+          <h3 style="font-size: 1.05rem; margin-top: 2rem; margin-bottom: 0.75rem; font-family: var(--font-title);">Bảng thông số chi tiết</h3>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>PID</th>
+                  <th>Arrival Time (AT)</th>
+                  <th>Burst Time (BT)</th>
+                  <th>Completion Time (CT)</th>
+                  <th>Turnaround Time (TAT)</th>
+                  <th>Waiting Time (WT)</th>
+                </tr>
+              </thead>
+              <tbody id="rr-results-tbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Compare Tab Content -->
+        <section class="tab-content card" id="compare-content" role="tabpanel">
+          <h2 class="card-title">Bảng so sánh hiệu năng của hai thuật toán</h2>
+          
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Chỉ số so sánh (Trung bình)</th>
+                  <th>FCFS</th>
+                  <th>Round Robin</th>
+                  <th>Tối ưu hơn</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Thời gian chờ (AWT)</strong></td>
+                  <td id="compare-fcfs-awt">0.00</td>
+                  <td id="compare-rr-awt">0.00</td>
+                  <td id="compare-winner-awt">-</td>
+                </tr>
+                <tr>
+                  <td><strong>Thời gian hoàn thành (ATAT)</strong></td>
+                  <td id="compare-fcfs-atat">0.00</td>
+                  <td id="compare-rr-atat">0.00</td>
+                  <td id="compare-winner-atat">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="winner-badge" id="performance-summary">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span id="winner-text">Bấm "Chạy Mô Phỏng" để phân tích thuật toán tối ưu.</span>
+          </div>
+
+          <div style="margin-top: 2rem;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.5rem; font-family: var(--font-title);">Phân tích lý thuyết:</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+              - <strong>FCFS</strong>: Đơn giản, không gây ra hao phí chuyển ngữ cảnh (context switch). Tuy nhiên, dễ gặp hiệu ứng <em>Convoy Effect</em> khi một tiến trình có thời gian chạy cực lớn đến trước, làm nghẽn toàn bộ các tiến trình ngắn hơn phía sau.
+            </p>
+            <p style="color: var(--text-secondary);">
+              - <strong>Round Robin</strong>: Thích hợp cho hệ thống chia sẻ thời gian (Time-sharing). Giảm thiểu tối đa tình trạng "đói độc lập" bằng cách cấp phát luân phiên. Phụ thuộc lớn vào việc lựa chọn thời lượng tử <code>q</code>.
+            </p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+  
+  <script src="app.js"></script>
+</body>
+</html>
