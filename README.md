@@ -119,3 +119,4 @@ Mỗi phần tử trong mảng đại diện cho trạng thái của hệ thốn
 2.  **Mô phỏng thời gian thực (Step-by-Step Simulation)**: Người dùng có thể bấm **Play** để xem hệ thống chạy tự động, **Pause** để dừng lại phân tích, hoặc bấm **Next/Prev** để đi tới/lui từng giây một cách trực quan.
 3.  **Biểu đồ Gantt tương tác**: Biểu đồ Gantt tự động co giãn theo thời gian thực, hiển thị chi tiết thông tin tiến trình (Start, End, Duration) khi di chuột vào (Tooltip).
 4.  **So sánh hiệu năng trực quan**: Tự động tính toán và so sánh thời gian chờ trung bình (AWT), thời gian hoàn thành trung bình (ATAT) giữa hai thuật toán và đưa ra kết luận thuật toán nào tối ưu hơn cho bộ dữ liệu hiện tại.
+
